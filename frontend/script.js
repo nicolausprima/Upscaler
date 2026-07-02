@@ -43,7 +43,14 @@ scaleSelector.addEventListener("click", (e) => {
 strengthSlider.addEventListener("input", (e) => {
     selectedStrength = parseInt(e.target.value, 10);
     strengthValue.textContent = `${selectedStrength}%`;
+    
+    // Dynamic smooth background fill
+    const val = e.target.value;
+    e.target.style.background = `linear-gradient(to right, #1d1d1f ${val}%, rgba(0, 0, 0, 0.08) ${val}%)`;
 });
+
+// Initialize slider fill on load
+strengthSlider.style.background = `linear-gradient(to right, #1d1d1f ${strengthSlider.value}%, rgba(0, 0, 0, 0.08) ${strengthSlider.value}%)`;
 
 // ===== File Upload =====
 dropZone.addEventListener("click", () => {

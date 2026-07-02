@@ -295,6 +295,11 @@ body {
     transform: scale(1.05);
 }
 
+.range-slider::-webkit-slider-thumb:active {
+    transform: scale(0.92);
+    cursor: grabbing;
+}
+
 .slider-labels {
     display: flex;
     justify-content: space-between;
