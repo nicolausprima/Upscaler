@@ -64,11 +64,16 @@ Frontend akan berjalan di `http://localhost:5500`.
 
 ## 📜 Lisensi & Atribusi Model
 
-Proyek aplikasi web ini dilisensikan di bawah **MIT License** (lihat file `LICENSE`). Namun, harap diperhatikan bahwa aplikasi ini menggunakan model AI *pretrained* pihak ketiga:
+Proyek aplikasi web ini dilisensikan di bawah **MIT License** (lihat file `LICENSE`). Namun, harap diperhatikan bahwa aplikasi ini (beserta ekstensinya) menggunakan model AI *pretrained* pihak ketiga:
 
-**Real-ESRGAN**
+**1. Real-ESRGAN** (Peningkat Resolusi Utama)
 - **Pembuat**: [Xintao Wang dkk. (Tencent ARC)](https://github.com/xinntao/Real-ESRGAN)
 - **Lisensi Model**: [BSD 3-Clause License](https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE)
 - **Download Model**: [RealESRGAN_x4plus.pth (67MB)](https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth)
 
-*Proyek ini tidak mengklaim kepemilikan atas arsitektur model maupun bobot (weights) dari Real-ESRGAN. Aplikasi ini murni berfungsi sebagai antarmuka (wrapper) untuk mempermudah penggunaan model tersebut secara lokal.*
+**2. GFPGAN** (Restorasi Wajah - *Opsional/Ekstensi*)
+- **Pembuat**: [Tencent ARC](https://github.com/TencentARC/GFPGAN)
+- **Lisensi Model**: [Apache License 2.0](https://github.com/TencentARC/GFPGAN/blob/master/LICENSE)
+- **Download Model**: [GFPGANv1.4.pth (332MB)](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth)
+
+*Proyek ini tidak mengklaim kepemilikan atas arsitektur model maupun bobot (weights) dari Real-ESRGAN ataupun GFPGAN. Aplikasi ini murni berfungsi sebagai antarmuka (wrapper) untuk mempermudah penggunaan model tersebut secara lokal.*
