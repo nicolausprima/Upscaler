@@ -23,10 +23,10 @@ Sebuah aplikasi web *open-source* untuk meningkatkan resolusi gambar (upscaling)
 ## 📦 Struktur Folder
 ```
 Project Restorer/
+├── models/                  # Folder untuk model RealESRGAN_x4plus.pth
 ├── backend/
 │   ├── api.py               # Entry point FastAPI
 │   ├── requirements.txt     # Dependensi Python
-│   ├── weights/             # Folder untuk model RealESRGAN_x4plus.pth
 │   ├── static/uploads/      # Penyimpanan sementara untuk input/output gambar
 │   └── src/
 │       ├── pipeline.py      # Orkestrator AI (Class ImageUpscaler)
@@ -46,7 +46,7 @@ Pastikan Anda sudah menginstal Python (disarankan Python 3.9+).
 cd backend
 pip install -r requirements.txt
 ```
-*Catatan: Pastikan file model `RealESRGAN_x4plus.pth` sudah berada di dalam folder `backend/weights/`.*
+*Catatan: Pastikan file model `RealESRGAN_x4plus.pth` sudah berada di dalam folder `models/`.*
 
 Jalankan server FastAPI:
 ```bash
@@ -74,14 +74,8 @@ Proyek aplikasi web ini dilisensikan di bawah **MIT License** (lihat file `LICEN
 **2. GFPGAN** (Restorasi Wajah - *Opsional/Ekstensi*)
 - **Pembuat**: [Tencent ARC](https://github.com/TencentARC/GFPGAN)
 - **Lisensi Model**: [Apache License 2.0](https://github.com/TencentARC/GFPGAN/blob/master/LICENSE)
-- **Download Model**: [GFPGANv1.4.pth (332MB)](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth)
+- **Download Model**: [GFPGANv1.4.pth (332MB)](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth)
 
 *Proyek ini tidak mengklaim kepemilikan atas arsitektur model maupun bobot (weights) dari Real-ESRGAN ataupun GFPGAN. Aplikasi ini murni berfungsi sebagai antarmuka (wrapper) untuk mempermudah penggunaan model tersebut secara lokal.*
-
-## Credits & Licenses
-
-Proyek ini menggunakan model open source berikut:
-- [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) — BSD 3-Clause License
-- [GFPGAN](https://github.com/TencentARC/GFPGAN) — Apache 2.0 License (dengan beberapa komponen pihak ketiga di bawah lisensi berbeda, lihat file lisensi terkait)
 
 Teks lengkap lisensi masing-masing tersedia di folder `THIRD_PARTY_LICENSES/`.
