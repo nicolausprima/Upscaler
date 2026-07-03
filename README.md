@@ -77,3 +77,11 @@ Proyek aplikasi web ini dilisensikan di bawah **MIT License** (lihat file `LICEN
 - **Download Model**: [GFPGANv1.4.pth (332MB)](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth)
 
 *Proyek ini tidak mengklaim kepemilikan atas arsitektur model maupun bobot (weights) dari Real-ESRGAN ataupun GFPGAN. Aplikasi ini murni berfungsi sebagai antarmuka (wrapper) untuk mempermudah penggunaan model tersebut secara lokal.*
+
+## Credits & Licenses
+
+Proyek ini menggunakan model open source berikut:
+- [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) — BSD 3-Clause License
+- [GFPGAN](https://github.com/TencentARC/GFPGAN) — Apache 2.0 License (dengan beberapa komponen pihak ketiga di bawah lisensi berbeda, lihat file lisensi terkait)
+
+Teks lengkap lisensi masing-masing tersedia di folder `THIRD_PARTY_LICENSES/`.
