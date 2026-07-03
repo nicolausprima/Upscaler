@@ -1,4 +1,5 @@
 import os
+import math
 import cv2
 import numpy as np
 from realesrgan import RealESRGANer
@@ -67,20 +68,53 @@ def load_upscaler(model_type="general"):
     return upsampler
 
 
-def upscale_image(upsampler, img, outscale=4, strength=100):
+def upscale_image(upsampler, img, outscale=4, strength=100, progress_callback=None):
     """
     Upscale gambar.
     - outscale: 2 atau 4
     - strength: 0-100, seberapa kuat enhancement AI.
-      0   = murni bicubic (no AI), 
+      0   = murni bicubic (no AI),
       100 = full Real-ESRGAN.
       Di antara itu = blend keduanya.
+    - progress_callback(pct: int): dipanggil per-tile dengan persentase 0-95.
     """
     tile = _adaptive_tile_size(img)
     upsampler.tile_size = tile
 
-    # Full AI upscale
-    ai_output, _ = upsampler.enhance(img, outscale=outscale)
+    # Hitung total tile untuk progress yang akurat
+    h, w = img.shape[:2]
+    tiles_h = math.ceil(h / tile)
+    tiles_w = math.ceil(w / tile)
+    total_tiles = max(1, tiles_h * tiles_w)
+
+    # Wrap model untuk intercept setiap tile inference
+    if progress_callback:
+        original_model = upsampler.model
+        tile_counter = [0]
+
+        class TileProgressWrapper:
+            def __call__(self, *args, **kwargs):
+                result = original_model(*args, **kwargs)
+                tile_counter[0] += 1
+                pct = min(95, int(tile_counter[0] / total_tiles * 95))
+                try:
+                    progress_callback(pct)
+                except Exception:
+                    pass
+                return result
+
+            def __getattr__(self, name):
+                return getattr(original_model, name)
+
+        upsampler.model = TileProgressWrapper()
+
+    try:
+        # Full AI upscale
+        ai_output, _ = upsampler.enhance(img, outscale=outscale)
+    finally:
+        # Kembalikan model asli
+        if progress_callback:
+            upsampler.model = original_model
 
     # Jika strength < 100, blend dengan simple bicubic resize
     if strength < 100:
