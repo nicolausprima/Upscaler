@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Upscaler</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=16">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -21,7 +22,7 @@
         <main class="card">
             <!-- Upload Area -->
             <div class="upload-area" id="dropZone">
-                <input type="file" id="fileInput" accept="image/*" hidden>
+                <input type="file" id="fileInput" accept="image/*" hidden multiple>
                 <div id="uploadPrompt">
                     <div class="upload-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -31,9 +32,10 @@
                         </svg>
                     </div>
                     <p class="upload-text">Pilih atau letakkan gambar</p>
-                    <p class="upload-hint">Format didukung: JPG, PNG, WEBP</p>
+                    <p class="upload-hint">Format: JPG, PNG, WEBP &bull; Pilih banyak sekaligus</p>
                 </div>
                 <img id="previewImg" alt="Preview">
+                <div id="multiPreviewGrid" style="display:none;"></div>
             </div>
             
             <button class="reset-btn" id="resetBtn" type="button">
@@ -73,14 +75,17 @@
                 Tingkatkan Resolusi
             </button>
 
-            <!-- Loading State -->
+            <!-- Loading State (single mode) -->
             <div class="loading-indicator" id="loadingSection">
                 <div class="spinner"></div>
-                <p class="loading-text">Memproses gambar...</p>
+                <p class="loading-text" id="loadingText">Memproses gambar...</p>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
             </div>
         </main>
 
-        <!-- Result Card -->
+        <!-- Result Card (single mode) -->
         <section class="card result-section" id="resultSection">
             <div class="result-header">
                 <div class="status-icon">
@@ -99,18 +104,29 @@
             <!-- Comparison -->
             <div class="comparison-wrapper">
                 <div class="comparison-container" id="comparisonContainer">
-                    <img id="beforeImg" alt="Original">
-                    <div class="comparison-after" id="comparisonAfter">
-                        <img id="afterImg" alt="Enhanced">
+                    <div class="zoom-layer" id="zoomLayer">
+                        <img id="beforeImg" alt="Original">
+                        <div class="comparison-after" id="comparisonAfter">
+                            <img id="afterImg" alt="Enhanced">
+                        </div>
                     </div>
+                    <!-- Slider di luar zoom-layer agar tidak ikut di-scale -->
                     <div class="slider-line" id="comparisonSliderLine"></div>
                     <div class="slider-handle" id="comparisonSliderHandle"></div>
                     <span class="badge badge-left">Before</span>
                     <span class="badge badge-right">After</span>
+                    <button class="zoom-reset-btn" id="zoomResetBtn" style="display:none" title="Lihat foto penuh">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                        Foto Penuh
+                    </button>
                 </div>
             </div>
 
-            <!-- Download -->
+            <div id="featureHighlights" class="highlights-container">
+                <!-- Highlight buttons injected via JS -->
+            </div>
+
+            <!-- Download single -->
             <a href="#" class="btn-secondary" id="downloadBtn" download="upscaled.jpg">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -120,8 +136,28 @@
                 Unduh Gambar
             </a>
         </section>
+
+        <!-- ===== BATCH CARD ===== -->
+        <section class="card batch-section" id="batchSection" style="display:none;">
+            <div class="batch-header">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                Antrian Batch
+                <span class="batch-counter" id="batchCounter">0 / 0</span>
+            </div>
+
+            <!-- Queue list -->
+            <div class="batch-queue" id="batchQueue">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Download ZIP button (appears when done) -->
+            <button class="btn-zip" id="downloadZipBtn" style="display:none" type="button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Unduh Semua (ZIP)
+            </button>
+        </section>
     </div>
 
-    <script src="script.js?v=3"></script>
+    <script src="script.js?v=17"></script>
 </body>
 </html>
