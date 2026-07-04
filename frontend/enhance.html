@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Upscaler</title>
+    <title>Photo Enhancer</title>
+    <meta name="description" content="Perbaiki ketajaman foto secara instan dengan Sharpen dan Deblur">
     <link rel="stylesheet" href="style.css?v=17">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
-    <!-- Vibrant mesh gradient background for glass effect -->
     <div class="bg-mesh"></div>
 
     <header class="header">
-        <h1>Upscaler</h1>
-        <p class="subtitle">AI Image Enhancement</p>
-        
+        <h1>Enhancer</h1>
+        <p class="subtitle">Sharpen &amp; Deblur Instan</p>
+
         <nav class="app-nav">
-            <a href="/" class="nav-btn active">AI Upscaler</a>
-            <a href="/enhance.html" class="nav-btn">Photo Enhancer</a>
+            <a href="/" class="nav-btn">AI Upscaler</a>
+            <a href="/enhance.html" class="nav-btn active">Photo Enhancer</a>
         </nav>
     </header>
 
@@ -42,7 +42,7 @@
                 <img id="previewImg" alt="Preview">
                 <div id="multiPreviewGrid" style="display:none;"></div>
             </div>
-            
+
             <button class="reset-btn" id="resetBtn" type="button">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="1 4 1 10 7 10"></polyline>
@@ -53,36 +53,35 @@
 
             <!-- Controls -->
             <div class="form-group">
-                <div class="label">Skala Resolusi</div>
-                <div class="segmented-control" id="scaleSelector">
-                    <div class="segment-indicator"></div>
-                    <button class="segment-btn" data-scale="2" type="button">2x Scale</button>
-                    <button class="segment-btn active" data-scale="4" type="button">4x Scale</button>
+                <div class="label">Pilih Efek</div>
+                <div class="segmented-control" id="effectSelector">
+                    <div class="segment-indicator" style="width: calc(33.333% - 4px); transform: translateX(100%);"></div>
+                    <button class="segment-btn" data-effect="none" type="button">Tidak Ada</button>
+                    <button class="segment-btn active" data-effect="sharpen" type="button">Pertajam</button>
+                    <button class="segment-btn" data-effect="deblur" type="button">Kurangi Blur</button>
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="intensityGroup">
                 <div class="label">
-                    <span>Intensitas AI</span>
-                    <span class="label-value" id="strengthValue">80%</span>
+                    <span id="intensityLabel">Ketajaman</span>
+                    <span class="label-value" id="intensityValue">50%</span>
                 </div>
                 <div class="slider-container">
-                    <input type="range" id="strengthSlider" class="range-slider" min="0" max="100" value="80" step="1">
+                    <input type="range" id="intensitySlider" class="range-slider" min="0" max="100" value="50" step="1">
                     <div class="slider-labels">
-                        <span>Original</span>
-                        <span>Enhanced</span>
+                        <span>Halus</span>
+                        <span>Kuat</span>
                     </div>
                 </div>
             </div>
 
-
-
             <!-- Action Button -->
             <button class="btn-primary" id="processBtn" disabled type="button">
-                Tingkatkan Resolusi
+                Terapkan Efek
             </button>
 
-            <!-- Loading State (single mode) -->
+            <!-- Loading State -->
             <div class="loading-indicator" id="loadingSection">
                 <div class="spinner"></div>
                 <p class="loading-text" id="loadingText">Memproses gambar...</p>
@@ -92,7 +91,7 @@
             </div>
         </main>
 
-        <!-- Result Card (single mode) -->
+        <!-- Result Card -->
         <section class="card result-section" id="resultSection">
             <div class="result-header">
                 <div class="status-icon">
@@ -117,7 +116,6 @@
                             <img id="afterImg" alt="Enhanced">
                         </div>
                     </div>
-                    <!-- Slider di luar zoom-layer agar tidak ikut di-scale -->
                     <div class="slider-line" id="comparisonSliderLine"></div>
                     <div class="slider-handle" id="comparisonSliderHandle"></div>
                     <span class="badge badge-left">Before</span>
@@ -134,7 +132,7 @@
             </div>
 
             <!-- Download single -->
-            <a href="#" class="btn-secondary" id="downloadBtn" download="upscaled.jpg">
+            <a href="#" class="btn-secondary" id="downloadBtn" download="enhanced.jpg">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -152,12 +150,10 @@
                 <span class="batch-counter" id="batchCounter">0 / 0</span>
             </div>
 
-            <!-- Queue list -->
             <div class="batch-queue" id="batchQueue">
                 <!-- Injected via JS -->
             </div>
 
-            <!-- Download ZIP button (appears when done) -->
             <button class="btn-zip" id="downloadZipBtn" style="display:none" type="button">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Unduh Semua (ZIP)
@@ -165,6 +161,6 @@
         </section>
     </div>
 
-    <script src="script.js?v=20"></script>
+    <script src="enhance.js?v=4"></script>
 </body>
 </html>

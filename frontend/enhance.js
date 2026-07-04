@@ -7,9 +7,6 @@ const fileInput           = document.getElementById("fileInput");
 const uploadPrompt        = document.getElementById("uploadPrompt");
 const previewImg          = document.getElementById("previewImg");
 const processBtn          = document.getElementById("processBtn");
-const scaleSelector       = document.getElementById("scaleSelector");
-const strengthSlider      = document.getElementById("strengthSlider");
-const strengthValue       = document.getElementById("strengthValue");
 const loadingSection      = document.getElementById("loadingSection");
 const loadingText         = document.getElementById("loadingText");
 const resultSection       = document.getElementById("resultSection");
@@ -34,31 +31,51 @@ const downloadZipBtn  = document.getElementById("downloadZipBtn");
 
 let selectedFiles    = [];   // Array of File objects (from multi-select)
 let selectedFile     = null; // Single file (for single-mode compat)
-let selectedScale    = 4;
-let selectedStrength = 80;
-let selectedEffect   = "none";
+let selectedScale    = 1;    // No upscaling on this page
+let selectedStrength = 0;    // Not used on this page
+let selectedEffect   = "sharpen"; // default matches active btn in HTML
 let effectIntensity  = 50;
 let batchResults     = [];   // Collected output filenames for ZIP
 
-// (Post-process controls removed — handled only on enhance.html)
+// ===== Effect Selector (Segmented Control) =====
+const effectSelector  = document.getElementById("effectSelector");
+const intensityGroup  = document.getElementById("intensityGroup");
+const intensitySlider = document.getElementById("intensitySlider");
+const intensityValue  = document.getElementById("intensityValue");
+const intensityLabel  = document.getElementById("intensityLabel");
 
-// ===== Controls =====
-scaleSelector.addEventListener("click", (e) => {
+effectSelector.addEventListener("click", (e) => {
     const btn = e.target.closest(".segment-btn");
     if (!btn) return;
-    scaleSelector.querySelectorAll(".segment-btn").forEach(b => b.classList.remove("active"));
+    effectSelector.querySelectorAll(".segment-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    selectedScale = parseInt(btn.dataset.scale, 10);
-    const indicator = scaleSelector.querySelector(".segment-indicator");
-    if (indicator) indicator.style.transform = selectedScale === 4 ? "translateX(100%)" : "translateX(0)";
+    selectedEffect = btn.dataset.effect;
+
+    const indicator = effectSelector.querySelector(".segment-indicator");
+    if (indicator) {
+        if (selectedEffect === "none")    indicator.style.transform = "translateX(0)";
+        else if (selectedEffect === "sharpen") indicator.style.transform = "translateX(100%)";
+        else if (selectedEffect === "deblur")  indicator.style.transform = "translateX(200%)";
+    }
+
+    if (selectedEffect === "none") {
+        intensityGroup.style.display = "none";
+    } else {
+        intensityGroup.style.display = "block";
+        intensityLabel.textContent = selectedEffect === "sharpen" ? "Ketajaman" : "Kekuatan Deblur";
+    }
 });
 
-strengthSlider.addEventListener("input", (e) => {
-    selectedStrength = parseInt(e.target.value, 10);
-    strengthValue.textContent = `${selectedStrength}%`;
-    const pct = (selectedStrength / 100) * 100;
+// Intensity Slider
+intensitySlider.addEventListener("input", (e) => {
+    effectIntensity = parseInt(e.target.value, 10);
+    intensityValue.textContent = `${effectIntensity}%`;
+    const pct = effectIntensity;
     e.target.style.background = `linear-gradient(to right, var(--accent) ${pct}%, rgba(0,0,0,0.08) ${pct}%)`;
 });
+
+// Init slider fill
+intensitySlider.style.background = `linear-gradient(to right, var(--accent) 50%, rgba(0,0,0,0.08) 50%)`;
 
 
 // ===== File Selection =====
@@ -185,7 +202,7 @@ resetBtn.addEventListener("click", () => {
     dropZone.classList.remove("has-multi");
     resetBtn.style.display = "none";
     processBtn.disabled = true;
-    processBtn.textContent = "Tingkatkan Resolusi";
+    processBtn.textContent = "Terapkan Efek";
     fileInput.value = "";
     loadingSection.classList.remove("visible");
     resultSection.classList.remove("visible");
@@ -205,77 +222,36 @@ function fileToBase64(file) {
     });
 }
 
-// ===== Process via WebSocket =====
-function processFileWS(file) {
-    return new Promise(async (resolve, reject) => {
-        const ws = new WebSocket(WS_URL);
-
-        ws.onerror = () => reject(new Error("WebSocket connection failed"));
-
-        ws.onopen = async () => {
-            const b64 = await fileToBase64(file);
-            ws.send(JSON.stringify({
-                filename: file.name,
-                file_b64: b64,
-                scale: selectedScale,
-                strength: selectedStrength,
-                effect: selectedEffect,
-                effect_intensity: effectIntensity
-            }));
-        };
-
-        ws.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-            if (msg.type === "progress") {
-                resolve({ type: "progress", pct: msg.pct, ws });
-                // Don't close — keep streaming
-            } else if (msg.type === "done") {
-                ws.close();
-                resolve({ type: "done", data: msg });
-            } else if (msg.type === "error") {
-                ws.close();
-                reject(new Error(msg.message));
-            }
-        };
-    });
-}
+// function processFileWS removed
 
 // ===== Process via WebSocket (streaming, with callbacks) =====
-function processFileWithProgress(file, onProgress, onDone, onError) {
-    const ws = new WebSocket(WS_URL);
-
-    ws.onerror = () => onError(new Error("WebSocket connection failed"));
-
-    ws.onopen = async () => {
-        try {
-            const b64 = await fileToBase64(file);
-            ws.send(JSON.stringify({
+// ===== Process via HTTP =====
+async function processFileWithProgress(file, onProgress, onDone, onError) {
+    try {
+        onProgress(50); // Instant 50% while waiting
+        const b64 = await fileToBase64(file);
+        
+        const response = await fetch(`${API_URL}/api/enhance`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
                 filename: file.name,
                 file_b64: b64,
-                scale: selectedScale,
-                strength: selectedStrength,
                 effect: selectedEffect,
                 effect_intensity: effectIntensity
-            }));
-        } catch (e) {
-            onError(e);
-        }
-    };
+            })
+        });
 
-    ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "progress") {
-            onProgress(msg.pct);
-        } else if (msg.type === "done") {
-            ws.close();
-            onDone(msg);
-        } else if (msg.type === "error") {
-            ws.close();
-            onError(new Error(msg.message));
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || "Failed to process image");
         }
-    };
 
-    return ws;
+        const data = await response.json();
+        onDone(data);
+    } catch (e) {
+        onError(e);
+    }
 }
 
 // ===== Processing =====
@@ -318,14 +294,14 @@ processBtn.addEventListener("click", async () => {
                 setTimeout(() => {
                     loadingSection.classList.remove("visible");
                     processBtn.disabled = false;
-                    processBtn.textContent = "Tingkatkan Resolusi";
+                    processBtn.textContent = "Terapkan Efek";
                 }, 500);
             },
             (err) => {
                 alert("Terjadi kesalahan: " + err.message);
                 loadingSection.classList.remove("visible");
                 processBtn.disabled = false;
-                processBtn.textContent = "Tingkatkan Resolusi";
+                processBtn.textContent = "Terapkan Efek";
             }
         );
 
@@ -432,13 +408,6 @@ processBtn.addEventListener("click", async () => {
 });
 
 // ===== Download ZIP =====
-const ZIP_BTN_HTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Unduh Semua (ZIP)`;
-
-function resetZipBtn() {
-    downloadZipBtn.innerHTML = ZIP_BTN_HTML;
-    downloadZipBtn.disabled = false;
-}
-
 downloadZipBtn.addEventListener("click", async () => {
     if (batchResults.length === 0) return;
 
@@ -452,10 +421,7 @@ downloadZipBtn.addEventListener("click", async () => {
             body: JSON.stringify({ filenames: batchResults })
         });
 
-        if (!response.ok) {
-            const text = await response.text();
-            throw new Error(`Server error ${response.status}: ${text}`);
-        }
+        if (!response.ok) throw new Error("Gagal membuat ZIP");
 
         const blob = await response.blob();
         const url  = URL.createObjectURL(blob);
@@ -465,14 +431,12 @@ downloadZipBtn.addEventListener("click", async () => {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-        // Reset button after successful download
-        resetZipBtn();
+        URL.revokeObjectURL(url);
     } catch (err) {
-        console.error("ZIP error:", err);
         alert("Gagal mengunduh ZIP: " + err.message);
-        resetZipBtn();
+    } finally {
+        downloadZipBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Unduh Semua (ZIP)`;
+        downloadZipBtn.disabled = false;
     }
 });
 
