@@ -104,6 +104,8 @@ async def ws_upscale(websocket: WebSocket):
         file_b64 = data.get("file_b64", "")
         scale = int(data.get("scale", 4))
         strength = int(data.get("strength", 80))
+        effect = data.get("effect", "none")
+        effect_intensity = int(data.get("effect_intensity", 50))
 
         # Decode dan simpan file input
         ext = os.path.splitext(filename)[1] or ".jpg"
@@ -135,6 +137,8 @@ async def ws_upscale(websocket: WebSocket):
                 image_path=input_path,
                 scale=scale,
                 strength=strength,
+                effect=effect,
+                effect_intensity=effect_intensity,
                 output_path=output_path,
                 progress_callback=progress_callback,
             )
@@ -202,4 +206,52 @@ async def upscale_photo(
         "scale": result["scale"],
         "processing_time_seconds": result["processing_time_seconds"],
         "detected_faces": result.get("detected_faces", []),
+    }
+
+class EnhanceRequest(BaseModel):
+    filename: str
+    file_b64: str
+    effect: str
+    effect_intensity: int
+
+@app.post("/api/enhance")
+async def api_enhance(req: EnhanceRequest):
+    import time
+    start_time = time.time()
+    
+    ext = os.path.splitext(req.filename)[1] or ".jpg"
+    input_filename = f"{uuid.uuid4().hex}{ext}"
+    input_path = os.path.join(UPLOAD_DIR, input_filename)
+    
+    file_bytes = base64.b64decode(req.file_b64)
+    with open(input_path, "wb") as f:
+        f.write(file_bytes)
+        
+    output_filename = f"enhanced_{input_filename}"
+    output_path = os.path.join(UPLOAD_DIR, output_filename)
+    
+    # Run the enhancement logic directly without upscaling
+    # We need to import the enhancement logic from pipeline
+    from src.pipeline import apply_enhancement
+    from src.preprocess import get_image_info, get_file_size_mb
+    import cv2
+    
+    img = cv2.imread(input_path)
+    input_info = get_image_info(img)
+    
+    img = apply_enhancement(img, req.effect, req.effect_intensity)
+    
+    cv2.imwrite(output_path, img)
+    output_info = get_image_info(img)
+    
+    elapsed = round(time.time() - start_time, 2)
+    
+    return {
+        "result_url": f"/static/uploads/{output_filename}",
+        "output_filename": output_filename,
+        "input": input_info,
+        "output": output_info,
+        "output_size_mb": get_file_size_mb(output_path),
+        "processing_time_seconds": elapsed,
+        "scale": 1
     }

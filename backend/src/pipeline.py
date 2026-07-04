@@ -1,8 +1,53 @@
 import os
 import time
 import cv2
+import numpy as np
 from src.preprocess import load_and_validate, resize_if_too_large, get_image_info, get_file_size_mb
 from src.upscale import load_upscaler, upscale_image
+
+def apply_enhancement(img, effect="none", effect_intensity=50):
+    """Apply post-processing effects to an image."""
+    alpha = effect_intensity / 100.0
+
+    if effect == "sharpen":
+        print(f"Applying Sharpen (intensity={effect_intensity}%)")
+        # Multi-scale unsharp mask
+        blur_fine = cv2.GaussianBlur(img, (0, 0), 1.0)
+        blur_med  = cv2.GaussianBlur(img, (0, 0), 3.0)
+        sharp_fine = cv2.addWeighted(img, 1.0 + alpha * 2.0, blur_fine, -alpha * 2.0, 0)
+        sharp_med  = cv2.addWeighted(img, 1.0 + alpha * 1.0, blur_med,  -alpha * 1.0, 0)
+        img = cv2.addWeighted(sharp_fine, 0.6, sharp_med, 0.4, 0)
+
+    elif effect == "deblur":
+        print(f"Applying Deblur (intensity={effect_intensity}%)")
+        # Map intensity to sigma: higher intensity → more aggressive deblur
+        # intensity 0→100 maps to sigma 0.3→2.5
+        sigma = 0.3 + alpha * 2.2
+
+        # Step 1: Strong unsharp masking at computed sigma
+        blurred = cv2.GaussianBlur(img, (0, 0), sigma)
+        # unsharp gain: at 50% → 1.5x, at 100% → 3.0x
+        gain = 0.5 + alpha * 2.5
+        layer1 = cv2.addWeighted(img, 1.0 + gain, blurred, -gain, 0)
+        layer1 = np.clip(layer1, 0, 255).astype(np.uint8)
+
+        # Step 2: Edge clarity with 5×5 Laplacian boost
+        gray = cv2.cvtColor(layer1, cv2.COLOR_BGR2GRAY) if len(layer1.shape) == 3 else layer1
+        lap = cv2.Laplacian(gray.astype(np.float32), cv2.CV_32F, ksize=5)
+        lap_norm = np.clip(lap * alpha * 0.5, -80, 80)
+        if len(layer1.shape) == 3:
+            lap_3ch = np.stack([lap_norm, lap_norm, lap_norm], axis=-1)
+            layer2 = np.clip(layer1.astype(np.float32) + lap_3ch, 0, 255).astype(np.uint8)
+        else:
+            layer2 = np.clip(layer1.astype(np.float32) + lap_norm, 0, 255).astype(np.uint8)
+
+        # Step 3: Final fine-grain detail recovery
+        blur3 = cv2.GaussianBlur(layer2, (0, 0), 0.8)
+        img = cv2.addWeighted(layer2, 1.0 + alpha * 0.8, blur3, -alpha * 0.8, 0)
+        img = np.clip(img, 0, 255).astype(np.uint8)
+
+    return img
+
 
 
 class ImageUpscaler:
@@ -17,7 +62,7 @@ class ImageUpscaler:
         self.upsampler = load_upscaler(model_type=model_type)
         print("Model siap.")
 
-    def upscale(self, image_path, scale=4, strength=100, output_path='result.jpg', progress_callback=None):
+    def upscale(self, image_path, scale=4, strength=100, effect="none", effect_intensity=50, output_path='result.jpg', progress_callback=None):
         """
         Alur:
         1. Load & validasi gambar
@@ -36,6 +81,9 @@ class ImageUpscaler:
         # Upscale
         print(f"Upscaling {scale}x, strength={strength}%...")
         img = upscale_image(self.upsampler, img, outscale=scale, strength=strength, progress_callback=progress_callback)
+        # Post-processing (OpenCV)
+        img = apply_enhancement(img, effect, effect_intensity)
+
         output_info = get_image_info(img)
 
         # Save
