@@ -3,9 +3,20 @@
 Sebuah aplikasi web *open-source* untuk meningkatkan resolusi gambar (upscaling) hingga 4x lipat menggunakan teknologi AI **Real-ESRGAN**. Aplikasi ini dirancang dengan antarmuka pengguna (UI) bergaya **Apple Light Mode Glassmorphism** yang elegan, bersih, dan responsif.
 
 ## 🚀 Fitur Utama
+
+### 1. AI Upscaler
 - **AI Upscaling (2x & 4x)**: Menggunakan model pretrained `RealESRGAN_x4plus` untuk mengembalikan detail gambar yang pecah atau buram.
 - **AI Strength Control**: Slider interaktif untuk mengatur intensitas AI (0% hingga 100%), memungkinkan pencampuran (*blending*) antara hasil AI dengan *bicubic resize* biasa agar tekstur tidak terlalu agresif pada gambar ilustrasi/kartun.
 - **Auto-Downscale Protection**: Gambar yang terlalu besar (>1024px) akan otomatis di-resize sebelum masuk ke model AI untuk mencegah *Out of Memory* (OOM) pada GPU dengan VRAM terbatas (misal: 6GB).
+- **Batch Processing**: Dukungan untuk mengunggah dan memproses banyak gambar sekaligus, lengkap dengan fitur unduh sebagai ZIP.
+
+### 2. Photo Enhancer (Tahap Pengembangan 🚧)
+- **Instan Sharpen & Deblur**: Perbaikan ketajaman gambar dan penghapusan efek blur (goyang/out of focus) secara instan menggunakan pemrosesan gambar OpenCV tanpa model AI berat.
+- **Multiscale Unsharp Masking**: Algoritma pertajam cerdas yang memperjelas tepi dan detail halus tanpa merusak tekstur.
+- **Iterative Deblurring**: Proses deblurring bertingkat dengan edge boost Laplacian untuk mengembalikan fokus yang hilang.
+- *Catatan: Fitur ini masih dalam tahap eksperimen dan algoritma akan terus disempurnakan.*
+
+### 3. UI/UX Modern
 - **Interactive UI**: Dilengkapi fitur *Before/After Comparison Slider* yang mulus dan *drag-and-drop* file uploader.
 - **Elegant Glass Theme**: Tema putih mutiara (*pearlescent white*) bergaya Apple VisionOS/macOS dengan efek *frosted glass* yang memukau.
 
