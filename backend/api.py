@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, UploadFile, File, Query, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from pydantic import BaseModel
 
 from src.pipeline import ImageUpscaler
@@ -62,18 +62,16 @@ class ZipRequest(BaseModel):
 @app.post("/zip")
 async def create_zip(req: ZipRequest):
     """Buat ZIP dari daftar file hasil upscale."""
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+    zip_filename = f"batch_{uuid.uuid4().hex}.zip"
+    zip_path = os.path.join(UPLOAD_DIR, zip_filename)
+    
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
         for filename in req.filenames:
             file_path = os.path.join(UPLOAD_DIR, filename)
             if os.path.exists(file_path):
                 zf.write(file_path, filename)
-    zip_buffer.seek(0)
-    return StreamingResponse(
-        zip_buffer,
-        media_type='application/zip',
-        headers={"Content-Disposition": "attachment; filename=restored_photos.zip"}
-    )
+                
+    return {"download_url": f"/download/{zip_filename}"}
 
 
 @app.websocket("/ws/upscale")
