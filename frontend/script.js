@@ -457,15 +457,14 @@ downloadZipBtn.addEventListener("click", async () => {
             throw new Error(`Server error ${response.status}: ${text}`);
         }
 
-        const blob = await response.blob();
-        const url  = URL.createObjectURL(blob);
+        const data = await response.json();
+        
         const a    = document.createElement("a");
-        a.href     = url;
+        a.href     = `${API_URL}${data.download_url}`;
         a.download = "restored_photos.zip";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
 
         // Reset button after successful download
         resetZipBtn();

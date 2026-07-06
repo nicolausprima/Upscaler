@@ -408,6 +408,13 @@ processBtn.addEventListener("click", async () => {
 });
 
 // ===== Download ZIP =====
+const ZIP_BTN_HTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Unduh Semua (ZIP)`;
+
+function resetZipBtn() {
+    downloadZipBtn.innerHTML = ZIP_BTN_HTML;
+    downloadZipBtn.disabled = false;
+}
+
 downloadZipBtn.addEventListener("click", async () => {
     if (batchResults.length === 0) return;
 
@@ -421,7 +428,10 @@ downloadZipBtn.addEventListener("click", async () => {
             body: JSON.stringify({ filenames: batchResults })
         });
 
-        if (!response.ok) throw new Error("Gagal membuat ZIP");
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Server error ${response.status}: ${text}`);
+        }
 
         const blob = await response.blob();
         const url  = URL.createObjectURL(blob);
@@ -431,12 +441,13 @@ downloadZipBtn.addEventListener("click", async () => {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        resetZipBtn();
     } catch (err) {
+        console.error("ZIP error:", err);
         alert("Gagal mengunduh ZIP: " + err.message);
-    } finally {
-        downloadZipBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Unduh Semua (ZIP)`;
-        downloadZipBtn.disabled = false;
+        resetZipBtn();
     }
 });
 
